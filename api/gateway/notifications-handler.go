@@ -1,11 +1,14 @@
 package gateway
 
 import (
+	"context"
 	"encoding/json"
-	"log"
+	"fmt"
 	"net/http"
 
-	"github.com/gorilla/mux"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/sns"
+	"github.com/labstack/echo/v4"
 )
 
 type Notification struct {
@@ -14,34 +17,41 @@ type Notification struct {
 }
 
 type NotificationHandler struct {
+	SNSClient             *sns.Client
+	NotificationsTopicARN string
 }
 
-func (handler NotificationHandler) Register(router *mux.Router) {
-	router.HandleFunc("", handler.Post).Methods(http.MethodPost)
+func (handler NotificationHandler) Mount(e *echo.Echo) {
+	e.POST("/notifications", echo.HandlerFunc(handler.Post))
 }
 
-func (handler NotificationHandler) Post(w http.ResponseWriter, r *http.Request) {
+func (handler NotificationHandler) Post(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	var n Notification
-	err := json.NewDecoder(r.Body).Decode(&n)
+	err := c.Bind(&n)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return err
 	}
 
-	// TODO: Publish the notification to the SNS topic "notifications"
-	publishNotification(n)
+	err = handler.publishNotification(ctx, n) // Check the error return value
+	if err != nil {
+		return fmt.Errorf("failed to publish notification to SNS: %w", err)
+	}
 
-	w.WriteHeader(http.StatusCreated)
-	log.Printf(`Notification sent to %s with message: "%s"`, n.Recipient, n.Message)
+	c.Logger().Infof(`Notification sent to %s with message: "%s"`, n.Recipient, n.Message)
+	return c.JSON(http.StatusCreated, n)
 }
 
-func publishNotification(n Notification) {
-	// TODO: Implement the logic to publish the notification to the SNS topic "notifications"
-	// You can use the AWS SDK or any other library to interact with SNS
-	// Example:
-	// snsClient := createSNSClient()
-	// snsClient.Publish(&sns.PublishInput{
-	//     TopicArn: aws.String("arn:aws:sns:us-west-2:123456789012:notifications"),
-	//     Message:  aws.String(fmt.Sprintf(`{"recipient": "%s", "message": "%s"}`, n.Recipient, n.Message)),
-	// })
+func (handler NotificationHandler) publishNotification(ctx context.Context, n Notification) error {
+	jsonData, err := json.Marshal(n)
+	if err != nil {
+		return err
+	}
+
+	_, err = handler.SNSClient.Publish(ctx, &sns.PublishInput{
+		TopicArn: &handler.NotificationsTopicARN,
+		Message:  aws.String(string(jsonData)),
+	})
+	return err
 }

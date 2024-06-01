@@ -2,15 +2,22 @@ package main
 
 import (
 	"log"
-	"net/http"
+	"strconv"
 
 	"sumup-notifications/api/gateway"
 )
 
 func main() {
+	c, err := gateway.LoadConfig()
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
 
-	r := gateway.SetupRouter()
+	e, err := gateway.Bootstrap(c)
 
-	// TODO graceful shutdown, see https://pkg.go.dev/github.com/gorilla/mux@v1.8.1#readme-graceful-shutdown
-	log.Fatal(http.ListenAndServe(":8080", r))
+	if err != nil {
+		log.Fatalf("bootstrap failed: %v", err)
+	}
+
+	e.Logger.Fatal(e.Start(":" + strconv.Itoa(c.Port)))
 }
