@@ -6,6 +6,7 @@ type Config struct {
 	Port                  int    `default:"8080"`
 	AWSEndpoint           string `envconfig:"AWS_ENDPOINT" required:"true"`
 	NotificationsTopicARN string `envconfig:"NOTIFICATIONS_TOPIC_ARN" required:"true"`
+	PostgresURL           string `envconfig:"POSTGRES_URL" required:"true"`
 }
 
 func LoadConfig() (Config, error) {

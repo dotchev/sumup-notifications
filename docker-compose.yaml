@@ -49,6 +49,7 @@ services:
       - AWS_ACCESS_KEY_ID=mock_access_key
       - AWS_SECRET_ACCESS_KEY=mock_secret_key
       - NOTIFICATIONS_TOPIC_ARN=arn:aws:sns:us-east-1:000000000000:notifications
+      - POSTGRES_URL=postgres://notifications:dbpassword@postgres:5432/notifications?sslmode=disable
     ports:
       - "8080:8080"
     depends_on:

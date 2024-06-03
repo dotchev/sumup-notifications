@@ -5,16 +5,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sumup-notifications/pkg/model"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
+
+	"sumup-notifications/pkg/model"
 )
 
 type NotificationHandler struct {
 	SNSClient             *sns.Client
 	NotificationsTopicARN string
+	dbPool                *pgxpool.Pool
 }
 
 func (handler NotificationHandler) Mount(e *echo.Echo) {

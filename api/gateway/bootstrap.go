@@ -4,22 +4,29 @@ import (
 	"context"
 
 	"github.com/aws/aws-sdk-go-v2/service/sns"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
 
 	"sumup-notifications/pkg/awsconfig"
+	"sumup-notifications/pkg/storage"
 )
 
 func Bootstrap(config Config) (*echo.Echo, error) {
 	ctx := context.Background()
 
-	cfg, err := awsconfig.Load(ctx, config.AWSEndpoint)
+	err := storage.MigrateDB(ctx, config.PostgresURL)
 	if err != nil {
 		return nil, err
 	}
 
-	snsClient := sns.NewFromConfig(cfg)
+	awsConfig, err := awsconfig.Load(ctx, config.AWSEndpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	snsClient := sns.NewFromConfig(awsConfig)
 
 	e := echo.New()
 	e.Logger.SetHeader("${time_rfc3339} ${level}")
@@ -28,11 +35,16 @@ func Bootstrap(config Config) (*echo.Echo, error) {
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: "${time_rfc3339} ${method} ${uri} ${status} ${error}\n",
 	}))
-	e.Use(middleware.Recover())
+
+	dbPool, err := pgxpool.New(ctx, config.PostgresURL)
+	if err != nil {
+		return nil, err
+	}
 
 	nh := NotificationHandler{
 		SNSClient:             snsClient,
 		NotificationsTopicARN: config.NotificationsTopicARN,
+		dbPool:                dbPool,
 	}
 	nh.Mount(e)
 
