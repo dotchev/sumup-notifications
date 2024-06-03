@@ -5,16 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sumup-notifications/pkg/model"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/labstack/echo/v4"
 )
-
-type Notification struct {
-	Recipient string `json:"recipient"`
-	Message   string `json:"message"`
-}
 
 type NotificationHandler struct {
 	SNSClient             *sns.Client
@@ -28,7 +24,7 @@ func (handler NotificationHandler) Mount(e *echo.Echo) {
 func (handler NotificationHandler) Post(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	var n Notification
+	var n model.Notification
 	err := c.Bind(&n)
 	if err != nil {
 		return err
@@ -43,7 +39,7 @@ func (handler NotificationHandler) Post(c echo.Context) error {
 	return c.JSON(http.StatusCreated, n)
 }
 
-func (handler NotificationHandler) publishNotification(ctx context.Context, n Notification) error {
+func (handler NotificationHandler) publishNotification(ctx context.Context, n model.Notification) error {
 	jsonData, err := json.Marshal(n)
 	if err != nil {
 		return err
