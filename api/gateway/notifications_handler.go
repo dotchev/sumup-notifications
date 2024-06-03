@@ -14,17 +14,17 @@ import (
 	"sumup-notifications/pkg/model"
 )
 
-type NotificationHandler struct {
+type NotificationsHandler struct {
 	SNSClient             *sns.Client
 	NotificationsTopicARN string
-	dbPool                *pgxpool.Pool
+	db                    *pgxpool.Pool
 }
 
-func (handler NotificationHandler) Mount(e *echo.Echo) {
+func (handler NotificationsHandler) Mount(e *echo.Echo) {
 	e.POST("/notifications", echo.HandlerFunc(handler.Post))
 }
 
-func (handler NotificationHandler) Post(c echo.Context) error {
+func (handler NotificationsHandler) Post(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	var n model.Notification
@@ -42,7 +42,7 @@ func (handler NotificationHandler) Post(c echo.Context) error {
 	return c.JSON(http.StatusCreated, n)
 }
 
-func (handler NotificationHandler) publishNotification(ctx context.Context, n model.Notification) error {
+func (handler NotificationsHandler) publishNotification(ctx context.Context, n model.Notification) error {
 	jsonData, err := json.Marshal(n)
 	if err != nil {
 		return err

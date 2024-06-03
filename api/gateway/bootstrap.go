@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -13,17 +14,17 @@ import (
 	"sumup-notifications/pkg/storage"
 )
 
-func Bootstrap(config Config) (*echo.Echo, error) {
+func Start(config Config) error {
 	ctx := context.Background()
 
 	err := storage.MigrateDB(ctx, config.PostgresURL)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	awsConfig, err := awsconfig.Load(ctx, config.AWSEndpoint)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	snsClient := sns.NewFromConfig(awsConfig)
@@ -38,15 +39,20 @@ func Bootstrap(config Config) (*echo.Echo, error) {
 
 	dbPool, err := pgxpool.New(ctx, config.PostgresURL)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	nh := NotificationHandler{
+	nh := NotificationsHandler{
 		SNSClient:             snsClient,
 		NotificationsTopicARN: config.NotificationsTopicARN,
-		dbPool:                dbPool,
+		db:                    dbPool,
 	}
 	nh.Mount(e)
 
-	return e, nil
+	rh := RecipientsHandler{
+		db: dbPool,
+	}
+	rh.Mount(e)
+
+	return e.Start(":" + strconv.Itoa(config.Port))
 }
