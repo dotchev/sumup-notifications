@@ -12,6 +12,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"sumup-notifications/pkg/model"
+	"sumup-notifications/pkg/storage"
 )
 
 type NotificationsHandler struct {
@@ -27,19 +28,33 @@ func (handler NotificationsHandler) Mount(e *echo.Echo) {
 func (handler NotificationsHandler) Post(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	var n model.Notification
-	err := c.Bind(&n)
+	var notification model.Notification
+	err := c.Bind(&notification)
 	if err != nil {
 		return err
 	}
 
-	err = handler.publishNotification(ctx, n) // Check the error return value
+	err = notification.Validate()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	recipients := storage.Recipients{DB: handler.db}
+	_, err = recipients.Load(ctx, notification.Recipient)
+	if err != nil {
+		if err == storage.ErrNotFound {
+			return echo.NewHTTPError(http.StatusBadRequest, "Unknown recipient")
+		}
+		return fmt.Errorf("failed to load recipient: %w", err)
+	}
+
+	err = handler.publishNotification(ctx, notification) // Check the error return value
 	if err != nil {
 		return fmt.Errorf("failed to publish notification to SNS: %w", err)
 	}
 
-	c.Logger().Infof(`Notification sent to %s with message: "%s"`, n.Recipient, n.Message)
-	return c.JSON(http.StatusCreated, n)
+	c.Logger().Infof(`Notification sent to %s with message: "%s"`, notification.Recipient, notification.Message)
+	return c.JSON(http.StatusCreated, notification)
 }
 
 func (handler NotificationsHandler) publishNotification(ctx context.Context, n model.Notification) error {
