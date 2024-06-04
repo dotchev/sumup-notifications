@@ -13,8 +13,6 @@ import (
 	"sumup-notifications/pkg/model"
 )
 
-const gatewayURL = "http://localhost:8080"
-
 func putRecipient(t *testing.T, recipient string, contact model.RecipientContact) (*http.Response, string) {
 	body, err := json.Marshal(contact)
 	require.NoError(t, err)

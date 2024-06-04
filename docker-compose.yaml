@@ -59,3 +59,18 @@ services:
         condition: service_healthy
       terraform:
         condition: service_completed_successfully
+
+  smssender:
+    build:
+      context: .
+      dockerfile: api/smssender/Dockerfile
+    environment:
+      - AWS_ENDPOINT=http://localstack:4566
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=mock_access_key
+      - AWS_SECRET_ACCESS_KEY=mock_secret_key
+    depends_on:
+      localstack:
+        condition: service_healthy
+      terraform:
+        condition: service_completed_successfully

@@ -70,14 +70,46 @@ func TestNotifications_Validation(t *testing.T) {
 	}
 }
 
-func TestNotifications(t *testing.T) {
-	t.Run("send notification", func(t *testing.T) {
+func TestNotifications_SMS(t *testing.T) {
+	t.Run("single one", func(t *testing.T) {
+		require.NoError(t, resetSMS())
+
 		recipient := "john"
-		resp, _ := putRecipient(t, recipient, model.RecipientContact{PhoneNumber: "+1234567890"})
+		sms := SMS{PhoneNumber: "+1234567890", Message: "hello"}
+
+		resp, _ := putRecipient(t, recipient, model.RecipientContact{PhoneNumber: sms.PhoneNumber})
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-		notification := model.Notification{Recipient: recipient, Message: "hello"}
+		notification := model.Notification{Recipient: recipient, Message: sms.Message}
 		resp, _ = postNotification(t, notification)
 		assert.Equal(t, http.StatusCreated, resp.StatusCode)
+
+		waitForSMS(t, []SMS{sms})
+	})
+
+	t.Run("multiple recipients", func(t *testing.T) {
+		require.NoError(t, resetSMS())
+
+		john := "john"
+		smsJohn := SMS{PhoneNumber: "+1234567890", Message: "hello"}
+
+		resp, _ := putRecipient(t, john, model.RecipientContact{PhoneNumber: smsJohn.PhoneNumber})
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+		jane := "jane"
+		smsJane := SMS{PhoneNumber: "+9876543210", Message: "world"}
+
+		resp, _ = putRecipient(t, jane, model.RecipientContact{PhoneNumber: smsJane.PhoneNumber})
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+		notification := model.Notification{Recipient: john, Message: smsJohn.Message}
+		resp, _ = postNotification(t, notification)
+		assert.Equal(t, http.StatusCreated, resp.StatusCode)
+
+		notification = model.Notification{Recipient: jane, Message: smsJane.Message}
+		resp, _ = postNotification(t, notification)
+		assert.Equal(t, http.StatusCreated, resp.StatusCode)
+
+		waitForSMS(t, []SMS{smsJohn, smsJane})
 	})
 }
