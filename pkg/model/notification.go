@@ -1,8 +1,6 @@
 package model
 
 import (
-	"encoding/json"
-
 	"github.com/pkg/errors"
 )
 
@@ -19,23 +17,4 @@ func (n Notification) Validate() error {
 		return errors.New("missing message")
 	}
 	return nil
-}
-
-func ParseSNSMessage(body string) (Notification, error) {
-	var notification Notification
-
-	var bodyData struct {
-		Message string `json:"Message"`
-	}
-	err := json.Unmarshal([]byte(body), &bodyData)
-	if err != nil {
-		return notification, err
-	}
-
-	err = json.Unmarshal([]byte(bodyData.Message), &notification)
-	if err != nil {
-		return notification, err
-	}
-
-	return notification, nil
 }

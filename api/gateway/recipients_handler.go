@@ -45,6 +45,11 @@ func (handler RecipientsHandler) Put(c echo.Context) error {
 		return err
 	}
 
+	err = contact.Validate()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
 	recipients := storage.Recipients{DB: handler.db}
 	err = recipients.Store(ctx, recipient, contact)
 	if err != nil {

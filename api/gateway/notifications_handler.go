@@ -40,15 +40,18 @@ func (handler NotificationsHandler) Post(c echo.Context) error {
 	}
 
 	recipients := storage.Recipients{DB: handler.db}
-	_, err = recipients.Load(ctx, notification.Recipient)
+	contact, err := recipients.Load(ctx, notification.Recipient)
 	if err != nil {
 		if err == storage.ErrNotFound {
-			return echo.NewHTTPError(http.StatusBadRequest, "Unknown recipient")
+			return echo.NewHTTPError(http.StatusBadRequest, "unknown recipient")
 		}
 		return fmt.Errorf("failed to load recipient: %w", err)
 	}
 
-	err = handler.publishNotification(ctx, notification) // Check the error return value
+	err = handler.publishNotification(ctx, model.NotificationMessage{
+		Notification:     notification,
+		RecipientContact: contact,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to publish notification to SNS: %w", err)
 	}
@@ -57,7 +60,7 @@ func (handler NotificationsHandler) Post(c echo.Context) error {
 	return c.JSON(http.StatusCreated, notification)
 }
 
-func (handler NotificationsHandler) publishNotification(ctx context.Context, n model.Notification) error {
+func (handler NotificationsHandler) publishNotification(ctx context.Context, n model.NotificationMessage) error {
 	jsonData, err := json.Marshal(n)
 	if err != nil {
 		return err

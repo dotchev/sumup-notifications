@@ -10,7 +10,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
 
-	"sumup-notifications/pkg/awsconfig"
+	"sumup-notifications/pkg/awsclient"
 	"sumup-notifications/pkg/storage"
 )
 
@@ -22,7 +22,7 @@ func Start(config Config) error {
 		return err
 	}
 
-	awsConfig, err := awsconfig.Load(ctx, config.AWSEndpoint)
+	awsConfig, err := awsclient.LoadConfig(ctx, config.AWSEndpoint)
 	if err != nil {
 		return err
 	}
