@@ -6,14 +6,12 @@ import (
 	"log"
 
 	"github.com/aws/aws-sdk-go-v2/service/sns"
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	"sumup-notifications/pkg/model"
 )
 
 type NotificationHandler struct {
 	SNSClient *sns.Client
-	DB        *pgxpool.Pool
 }
 
 func (h NotificationHandler) Handle(ctx context.Context, notification model.NotificationMessage) error {

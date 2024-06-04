@@ -26,7 +26,7 @@ func (c *NotificationConsumer) Start(ctx context.Context) error {
 	}
 	queueUrl := getQueueUrlOutput.QueueUrl
 
-	log.Printf("listening for messages on %s", *queueUrl)
+	log.Printf("Listening for messages on %s", *queueUrl)
 
 	for {
 		// Terminate the loop if the context is canceled
