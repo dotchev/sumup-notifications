@@ -20,13 +20,6 @@ func Start(config Config) error {
 	sqsClient := sqs.NewFromConfig(awsConfig)
 	sesClient := ses.NewFromConfig(awsConfig)
 
-	_, err = sesClient.VerifyEmailIdentity(ctx, &ses.VerifyEmailIdentityInput{
-		EmailAddress: &config.EmailSender,
-	})
-	if err != nil {
-		return fmt.Errorf("error verifying SES email identity: %w", err)
-	}
-
 	handler := NotificationHandler{
 		SESClient:   sesClient,
 		EmailSender: config.EmailSender,

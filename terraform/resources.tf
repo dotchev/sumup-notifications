@@ -8,6 +8,7 @@ provider "aws" {
   endpoints {
     sns = "http://localstack:4566"
     sqs = "http://localstack:4566"
+    ses = "http://localstack:4566"
   }
 }
 
@@ -49,4 +50,8 @@ resource "aws_sns_topic_subscription" "email_notifications" {
   topic_arn = aws_sns_topic.notifications.arn
   protocol  = "sqs"
   endpoint  = aws_sqs_queue.email_notifications.arn
+}
+
+resource "aws_ses_email_identity" "sender_email" {
+  email = "sender@notifications.com"
 }
