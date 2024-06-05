@@ -16,6 +16,7 @@ resource "aws_sns_topic" "notifications" {
   name = "notifications"
 }
 
+// SMS
 resource "aws_sqs_queue" "sms_notifications" {
   name = "sms_notifications"
 
@@ -34,6 +35,7 @@ resource "aws_sns_topic_subscription" "sms_notifications" {
   endpoint  = aws_sqs_queue.sms_notifications.arn
 }
 
+// Email
 resource "aws_sqs_queue" "email_notifications" {
   name = "email_notifications"
 
@@ -55,3 +57,23 @@ resource "aws_sns_topic_subscription" "email_notifications" {
 resource "aws_ses_email_identity" "sender_email" {
   email = "sender@notifications.com"
 }
+
+// Slack
+resource "aws_sqs_queue" "slack_notifications" {
+  name = "slack_notifications"
+
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.slack_notifications_dlq.arn
+    maxReceiveCount     = 5
+  })
+}
+resource "aws_sqs_queue" "slack_notifications_dlq" {
+  name = "slack_notifications_dlq"
+}
+
+resource "aws_sns_topic_subscription" "slack_notifications" {
+  topic_arn = aws_sns_topic.notifications.arn
+  protocol  = "sqs"
+  endpoint  = aws_sqs_queue.slack_notifications.arn
+}
+

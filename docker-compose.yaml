@@ -27,7 +27,7 @@ services:
       - POSTGRES_USER=notifications
       - POSTGRES_PASSWORD=dbpassword
       - POSTGRES_DB=notifications
-    command: postgres -c log_statement=all
+    command: -c log_statement=all
     # volumes:
     #   - ./postgres-data:/var/lib/postgresql/data
     ports:
@@ -37,6 +37,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  fake-slack:
+    image: wiremock/wiremock:3.6.0
+    ports:
+      - "7000:8080"
+    volumes:
+      - ./wiremock/slack-mappings:/home/wiremock/mappings
 
   gateway:
     build:
@@ -89,3 +96,22 @@ services:
         condition: service_healthy
       terraform:
         condition: service_completed_successfully
+
+  slacksender:
+    build:
+      context: .
+      dockerfile: api/slacksender/Dockerfile
+    environment:
+      - AWS_ENDPOINT=http://localstack:4566
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=mock_access_key
+      - AWS_SECRET_ACCESS_KEY=mock_secret_key
+      - SLACK_API_URL=http://localhost:7000/api/
+      - SLACK_TOKEN=mock_slack_token
+    depends_on:
+      localstack:
+        condition: service_healthy
+      terraform:
+        condition: service_completed_successfully
+      fake-slack:
+        condition: service_healthy

@@ -1,0 +1,17 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/api/chat.postMessage"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "ok": true,
+      "channel": "C1H9RESGL",
+      "ts": "1503435956.000247"
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

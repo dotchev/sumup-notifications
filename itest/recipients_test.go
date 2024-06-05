@@ -78,7 +78,7 @@ func TestRecipients_Put(t *testing.T) {
 		contact := model.RecipientContact{}
 		resp, body := putRecipient(t, "john", contact)
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-		assert.Contains(t, body, "at least one contact method (phone number or email) must be provided")
+		assert.Contains(t, body, "at least one contact method (phone number, email or Slack ID) must be provided")
 	})
 
 	t.Run("update recipient", func(t *testing.T) {
