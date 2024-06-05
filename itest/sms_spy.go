@@ -11,13 +11,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const localstackSMSURL = localstackURL + "/_aws/sns/sms-messages"
+
 type SMS struct {
 	PhoneNumber string
 	Message     string
 }
 
 func resetSMS() error {
-	del, err := http.NewRequest(http.MethodDelete, localstackURL+"/_aws/sns/sms-messages", nil)
+	del, err := http.NewRequest(http.MethodDelete, localstackSMSURL, nil)
 	if err != nil {
 		return err
 	}
@@ -33,7 +35,7 @@ func resetSMS() error {
 }
 
 func listSMS() ([]SMS, error) {
-	resp, err := http.Get(localstackURL + "/_aws/sns/sms-messages")
+	resp, err := http.Get(localstackSMSURL)
 	if err != nil {
 		return nil, err
 	}

@@ -113,3 +113,60 @@ func TestNotifications_SMS(t *testing.T) {
 		waitForSMS(t, []SMS{smsJohn, smsJane})
 	})
 }
+
+func TestNotifications_Email(t *testing.T) {
+	t.Run("single recipient", func(t *testing.T) {
+		require.NoError(t, resetEmails())
+
+		recipient := "john"
+		email := Email{
+			From:    "sender@notifications.com",
+			To:      "john@example.com",
+			Subject: "Notification",
+			Body:    "Hello, John!",
+		}
+
+		resp, _ := putRecipient(t, recipient, model.RecipientContact{Email: email.To})
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+		notification := model.Notification{Recipient: recipient, Message: email.Body}
+		resp, _ = postNotification(t, notification)
+		assert.Equal(t, http.StatusCreated, resp.StatusCode)
+
+		waitForEmails(t, []Email{email})
+	})
+
+	t.Run("multiple recipients", func(t *testing.T) {
+		require.NoError(t, resetEmails())
+
+		john := "john"
+		johnEmail := Email{
+			From:    "sender@notifications.com",
+			To:      "john@example.com",
+			Subject: "Notification",
+			Body:    "Hello, John!",
+		}
+		resp, _ := putRecipient(t, john, model.RecipientContact{Email: johnEmail.To})
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+		jane := "jane"
+		janeEmail := Email{
+			From:    "sender@notifications.com",
+			To:      "jane@example.com",
+			Subject: "Notification",
+			Body:    "Hello, Jane!",
+		}
+		resp, _ = putRecipient(t, jane, model.RecipientContact{Email: janeEmail.To})
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+		notification := model.Notification{Recipient: john, Message: johnEmail.Body}
+		resp, _ = postNotification(t, notification)
+		assert.Equal(t, http.StatusCreated, resp.StatusCode)
+
+		notification = model.Notification{Recipient: jane, Message: janeEmail.Body}
+		resp, _ = postNotification(t, notification)
+		assert.Equal(t, http.StatusCreated, resp.StatusCode)
+
+		waitForEmails(t, []Email{johnEmail, janeEmail})
+	})
+}
