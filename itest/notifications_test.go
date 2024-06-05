@@ -170,3 +170,31 @@ func TestNotifications_Email(t *testing.T) {
 		waitForEmails(t, []Email{johnEmail, janeEmail})
 	})
 }
+
+func TestNotifications_AllChannels(t *testing.T) {
+	require.NoError(t, resetSMS())
+	require.NoError(t, resetEmails())
+
+	recipient := "john"
+	message := "Hello, John!"
+	sms := SMS{PhoneNumber: "+1234567890", Message: message}
+	email := Email{
+		From:    "sender@notifications.com",
+		To:      "john@example.com",
+		Subject: "Notification",
+		Body:    message,
+	}
+
+	resp, _ := putRecipient(t, recipient, model.RecipientContact{
+		PhoneNumber: sms.PhoneNumber,
+		Email:       email.To,
+	})
+	require.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+	notification := model.Notification{Recipient: recipient, Message: message}
+	resp, _ = postNotification(t, notification)
+	assert.Equal(t, http.StatusCreated, resp.StatusCode)
+
+	waitForSMS(t, []SMS{sms})
+	waitForEmails(t, []Email{email})
+}
