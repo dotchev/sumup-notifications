@@ -171,9 +171,52 @@ func TestNotifications_Email(t *testing.T) {
 	})
 }
 
+func TestNotifications_Slack(t *testing.T) {
+	t.Run("single recipient", func(t *testing.T) {
+		require.NoError(t, resetSlackMessages())
+
+		recipient := "john"
+		message := SlackMessage{Channel: "U12345678", Text: "Hello, John!"}
+
+		resp, _ := putRecipient(t, recipient, model.RecipientContact{SlackID: message.Channel})
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+		notification := model.Notification{Recipient: recipient, Message: message.Text}
+		resp, _ = postNotification(t, notification)
+		assert.Equal(t, http.StatusCreated, resp.StatusCode)
+
+		waitForSlackMessages(t, []SlackMessage{message})
+	})
+
+	t.Run("multiple recipients", func(t *testing.T) {
+		require.NoError(t, resetSlackMessages())
+
+		john := "john"
+		johnMessage := SlackMessage{Channel: "U12345678", Text: "Hello, John!"}
+		resp, _ := putRecipient(t, john, model.RecipientContact{SlackID: johnMessage.Channel})
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+		jane := "jane"
+		janeMessage := SlackMessage{Channel: "U98765432", Text: "Hello, Jane!"}
+		resp, _ = putRecipient(t, jane, model.RecipientContact{SlackID: janeMessage.Channel})
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+		notification := model.Notification{Recipient: john, Message: johnMessage.Text}
+		resp, _ = postNotification(t, notification)
+		assert.Equal(t, http.StatusCreated, resp.StatusCode)
+
+		notification = model.Notification{Recipient: jane, Message: janeMessage.Text}
+		resp, _ = postNotification(t, notification)
+		assert.Equal(t, http.StatusCreated, resp.StatusCode)
+
+		waitForSlackMessages(t, []SlackMessage{johnMessage, janeMessage})
+	})
+}
+
 func TestNotifications_AllChannels(t *testing.T) {
 	require.NoError(t, resetSMS())
 	require.NoError(t, resetEmails())
+	require.NoError(t, resetSlackMessages())
 
 	recipient := "john"
 	message := "Hello, John!"
@@ -184,10 +227,12 @@ func TestNotifications_AllChannels(t *testing.T) {
 		Subject: "Notification",
 		Body:    message,
 	}
+	slack := SlackMessage{Channel: "U12345678", Text: "Hello, John!"}
 
 	resp, _ := putRecipient(t, recipient, model.RecipientContact{
 		PhoneNumber: sms.PhoneNumber,
 		Email:       email.To,
+		SlackID:     slack.Channel,
 	})
 	require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
@@ -197,4 +242,5 @@ func TestNotifications_AllChannels(t *testing.T) {
 
 	waitForSMS(t, []SMS{sms})
 	waitForEmails(t, []Email{email})
+	waitForSlackMessages(t, []SlackMessage{slack})
 }
