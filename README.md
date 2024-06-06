@@ -84,3 +84,4 @@ Deploying on a different cloud provider (e.g. GCP or Azure) would probably requi
 - Put credentials in a secure store, e.g. Vault
 - Improve logging, e.g. use [slog](https://pkg.go.dev/golang.org/x/exp/slog) to emt structured logs that are easier to analyze (for example with ELK)
 - Improve input validation
+- ...
