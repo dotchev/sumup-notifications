@@ -16,7 +16,7 @@ import (
 func postNotification(t *testing.T, notification model.Notification) (*http.Response, string) {
 	body, err := json.Marshal(notification)
 	require.NoError(t, err)
-	resp, err := http.Post(gatewayURL+"/notifications", "application/json", bytes.NewReader(body))
+	resp, err := httpClient.Post(gatewayURL+"/notifications", "application/json", bytes.NewReader(body))
 	assert.NoError(t, err)
 	defer resp.Body.Close()
 

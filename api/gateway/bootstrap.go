@@ -2,6 +2,10 @@ package gateway
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/aws/aws-sdk-go-v2/service/sns"
@@ -54,5 +58,36 @@ func Start(config Config) error {
 	}
 	rh.Mount(e)
 
-	return e.Start(":" + strconv.Itoa(config.Port))
+	tlsConfig, err := loadMTLSConfig(config)
+	if err != nil {
+		return err
+	}
+	server := &http.Server{
+		Addr:      ":" + strconv.Itoa(config.Port),
+		Handler:   e,
+		TLSConfig: tlsConfig,
+	}
+	e.Logger.Infof("Starting server on port %d", config.Port)
+	return server.ListenAndServeTLS("", "")
+}
+
+func loadMTLSConfig(appConfig Config) (*tls.Config, error) {
+	cert, err := tls.LoadX509KeyPair(appConfig.ServerCertFile, appConfig.ServerKeyFile)
+	if err != nil {
+		return nil, err
+	}
+
+	clientCAPool := x509.NewCertPool()
+	caCert, err := os.ReadFile(appConfig.CACertFile)
+	if err != nil {
+		return nil, err
+	}
+	clientCAPool.AppendCertsFromPEM(caCert)
+
+	return &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		ClientCAs:    clientCAPool,
+		ClientAuth:   tls.RequireAndVerifyClientCert,
+	}, nil
+
 }

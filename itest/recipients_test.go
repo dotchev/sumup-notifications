@@ -19,7 +19,7 @@ func putRecipient(t *testing.T, recipient string, contact model.RecipientContact
 	put, err := http.NewRequest(http.MethodPut, gatewayURL+"/recipients/"+recipient, bytes.NewReader(body))
 	require.NoError(t, err)
 	put.Header.Set("Content-Type", "application/json")
-	resp, err := http.DefaultClient.Do(put)
+	resp, err := httpClient.Do(put)
 	require.NoError(t, err)
 	defer resp.Body.Close()
 	bodyBytes, err := io.ReadAll(resp.Body)
@@ -38,13 +38,13 @@ func putRecipient(t *testing.T, recipient string, contact model.RecipientContact
 func deleteRecipient(t *testing.T, recipient string) *http.Response {
 	del, err := http.NewRequest(http.MethodDelete, gatewayURL+"/recipients/"+recipient, nil)
 	require.NoError(t, err)
-	resp, err := http.DefaultClient.Do(del)
+	resp, err := httpClient.Do(del)
 	require.NoError(t, err)
 	return resp
 }
 
 func getRecipient(t *testing.T, recipient string) (*http.Response, model.RecipientContact) {
-	resp, err := http.Get(gatewayURL + "/recipients/" + recipient)
+	resp, err := httpClient.Get(gatewayURL + "/recipients/" + recipient)
 	require.NoError(t, err)
 	defer resp.Body.Close()
 

@@ -18,4 +18,6 @@ WORKDIR /app
 
 COPY --from=builder /app/gateway .
 
+COPY mtls/gateway.crt.pem mtls/gateway.key.pem mtls/ca.crt.pem ./
+
 CMD ["./gateway"]
